@@ -1,0 +1,83 @@
+name: Manual Compile
+permissions:
+  contents: read
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to compile'
+        required: true
+        default: 'main'
+        type: string
+
+jobs:
+  compile_firmware:
+    name: Compile the firmware
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v3
+        with:
+          path: ~/.platformio
+          key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade platformio
+
+      - name: Install jq
+        run: sudo apt-get -y install jq
+
+      - name: Extract original version number
+        id: original_version
+        run: |
+          echo "firmware_version=$(grep '*VERSION' src/Globals.cpp | cut -d'=' -f2 | sed -r 's/"(.*)";/\1/' | awk '{$1=$1};1')" >> $GITHUB_OUTPUT
+
+      - name: Get commit short hash
+        id: commit_hash
+        run: |
+          echo "short_hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Update version with commit hash in Globals.cpp
+        run: |
+          NEW_VERSION="${{ steps.commit_hash.outputs.short_hash }}"
+          sed -i "s/\*VERSION = \".*\";/*VERSION = \"$NEW_VERSION\";/" src/Globals.cpp
+          echo "Updated version in Globals.cpp to $NEW_VERSION"
+
+      - name: Create Versionfile
+        run: echo '${{ steps.original_version.outputs.firmware_version }}-${{ steps.commit_hash.outputs.short_hash }}' > version
+
+      - name: Run PlatformIO for ulanzi
+        run: pio run --environment ulanzi
+
+      - name: Run PlatformIO for awtrix2_upgrade
+        run: pio run --environment awtrix2_upgrade
+
+      - name: Upload ulanzi firmware as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ulanzi_firmware_${{ steps.original_version.outputs.firmware_version }}_${{ steps.commit_hash.outputs.short_hash }}
+          path: .pio/build/ulanzi/firmware.bin
+
+      - name: Upload awtrix2_upgrade firmware as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: awtrix2_upgrade_firmware_${{ steps.original_version.outputs.firmware_version }}_${{ steps.commit_hash.outputs.short_hash }}
+          path: .pio/build/awtrix2_upgrade/firmware.bin
