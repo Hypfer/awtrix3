@@ -192,15 +192,19 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
 
       originalApps = newAppOrder;
 
-      // Update current app index to continue pointing at the app the user is currently seeing
       if (!currentAppName.isEmpty())
       {
-        for (size_t i = 0; i < originalApps.size(); ++i)
+        // If required, update current app index to continue pointing at the app the user is currently seeing
+        if (this->state.currentApp >= originalApps.size() || 
+            originalApps[this->state.currentApp].first != currentAppName)
         {
-          if (originalApps[i].first == currentAppName)
+          for (size_t i = 0; i < originalApps.size(); ++i)
           {
-            this->state.currentApp = i;
-            break;
+            if (originalApps[i].first == currentAppName)
+            {
+              this->state.currentApp = i;
+              break;
+            }
           }
         }
       }
