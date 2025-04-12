@@ -103,15 +103,12 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
 {
   if (DEBUG_MODE) {
     DEBUG_PRINTLN(F("===== MatrixDisplayUi::setApps START ====="));
-    DEBUG_PRINT(F("Original input apps count: "));
-    DEBUG_PRINTLN(String(appPairs.size()));
-    DEBUG_PRINTLN(F("Original apps: "));
+    DEBUG_PRINTF("Original input apps count: %d", appPairs.size());
+    DEBUG_PRINTLN(F("Original apps:"));
     for (const auto &app : appPairs) {
-      DEBUG_PRINT(F("  "));
-      DEBUG_PRINTLN(app.first);
+      DEBUG_PRINTF("  %s", app.first.c_str());
     }
-    DEBUG_PRINT(F("Current app index before processing: "));
-    DEBUG_PRINTLN(String(this->state.currentApp));
+    DEBUG_PRINTF("Current app index before processing: %d", this->state.currentApp);
   }
   
   delete[] AppFunctions;
@@ -124,15 +121,11 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
   {
     if (DEBUG_MODE) {
       DEBUG_PRINTLN(F("Priority apps feature enabled"));
-      DEBUG_PRINT(F("Priority apps count: "));
-      DEBUG_PRINTLN(String(PRIORITY_APPS.size()));
-      DEBUG_PRINTLN(F("Priority apps list: "));
+      DEBUG_PRINTF("Priority apps count: %d", PRIORITY_APPS.size());
+      DEBUG_PRINTLN(F("Priority apps list:"));
       for (size_t i = 0; i < PRIORITY_APPS.size(); i++) {
-        DEBUG_PRINT(F("  "));
-        DEBUG_PRINT(PRIORITY_APPS[i]);
-        if (i < PRIORITY_APPS.size() - 1) DEBUG_PRINT(F(", "));
+        DEBUG_PRINTF("  %s", PRIORITY_APPS[i].c_str());
       }
-      DEBUG_PRINTLN("");
     }
     
     /*
@@ -168,19 +161,14 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
         if (app.first == priorityAppName)
         {
           priorityApps.push_back(app);
-          if (DEBUG_MODE) {
-            DEBUG_PRINT(F("Found priority app: "));
-            DEBUG_PRINTLN(app.first);
-          }
+          if (DEBUG_MODE)
+            DEBUG_PRINTF("Found priority app: %s", app.first.c_str());
           found = true;
           break;
         }
       }
-      if (DEBUG_MODE && !found) {
-        DEBUG_PRINT(F("Warning: Priority app '"));
-        DEBUG_PRINT(priorityAppName);
-        DEBUG_PRINTLN(F("' specified but not found in available apps"));
-      }
+      if (DEBUG_MODE && !found)
+        DEBUG_PRINTF("Warning: Priority app '%s' specified but not found in available apps", priorityAppName.c_str());
     }
 
     // All non-priority apps go to regularApps
@@ -189,41 +177,31 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
       if (std::find(PRIORITY_APPS.begin(), PRIORITY_APPS.end(), app.first) == PRIORITY_APPS.end())
       {
         regularApps.push_back(app);
-        if (DEBUG_MODE) {
-          DEBUG_PRINT(F("Identified regular app: "));
-          DEBUG_PRINTLN(app.first);
-        }
+        if (DEBUG_MODE)
+          DEBUG_PRINTF("Identified regular app: %s", app.first.c_str());
       }
     }
     
     if (DEBUG_MODE) {
       DEBUG_PRINTLN(F("After separation:"));
-      DEBUG_PRINT(F("Priority apps found: "));
-      DEBUG_PRINTLN(String(priorityApps.size()));
-      DEBUG_PRINT(F("Regular apps found: "));
-      DEBUG_PRINTLN(String(regularApps.size()));
+      DEBUG_PRINTF("Priority apps found: %d", priorityApps.size());
+      DEBUG_PRINTF("Regular apps found: %d", regularApps.size());
     }
     
     // Remember the current app before reordering
     String currentAppName = "";
     if (AppCount > 0 && this->state.currentApp < AppCount)
     {
-      if (DEBUG_MODE) {
-        DEBUG_PRINT(F("Looking for current app name based on index: "));
-        DEBUG_PRINTLN(String(this->state.currentApp));
-      }
+      if (DEBUG_MODE)
+        DEBUG_PRINTF("Looking for current app name based on index: %d", this->state.currentApp);
         
       for (size_t i = 0; i < appPairs.size(); ++i)
       {
         if (appPairs[i].second == AppFunctions[this->state.currentApp])
         {
           currentAppName = appPairs[i].first;
-          if (DEBUG_MODE) {
-            DEBUG_PRINT(F("Current app identified: '"));
-            DEBUG_PRINT(currentAppName);
-            DEBUG_PRINT(F("' at index "));
-            DEBUG_PRINTLN(String(this->state.currentApp));
-          }
+          if (DEBUG_MODE)
+            DEBUG_PRINTF("Current app identified: '%s' at index %d", currentAppName.c_str(), this->state.currentApp);
           break;
         }
       }
@@ -232,11 +210,7 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
         DEBUG_PRINTLN(F("Warning: Could not identify current app name"));
     }
     else if (DEBUG_MODE) {
-      DEBUG_PRINT(F("No current app to identify (AppCount="));
-      DEBUG_PRINT(String(AppCount));
-      DEBUG_PRINT(F(", currentApp="));
-      DEBUG_PRINT(String(this->state.currentApp));
-      DEBUG_PRINTLN(F(")"));
+      DEBUG_PRINTF("No current app to identify (AppCount=%d, currentApp=%d)", AppCount, this->state.currentApp);
     }
 
     if (!priorityApps.empty() && !regularApps.empty())
@@ -253,10 +227,8 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
       for (const auto &priorityApp : priorityApps)
       {
         newAppOrder.push_back(priorityApp);
-        if (DEBUG_MODE) {
-          DEBUG_PRINT(F("  + Added initial priority app: "));
-          DEBUG_PRINTLN(priorityApp.first);
-        }
+        if (DEBUG_MODE)
+          DEBUG_PRINTF("  + Added initial priority app: %s", priorityApp.first.c_str());
       }
 
       // Then add regular apps one by one
@@ -266,15 +238,8 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
       for (size_t i = 0; i < regularApps.size(); i++)
       {
         newAppOrder.push_back(regularApps[i]);
-        if (DEBUG_MODE) {
-          DEBUG_PRINT(F("  + Added regular app: "));
-          DEBUG_PRINT(regularApps[i].first);
-          DEBUG_PRINT(F(" ("));
-          DEBUG_PRINT(String(i+1));
-          DEBUG_PRINT(F("/"));
-          DEBUG_PRINT(String(regularApps.size()));
-          DEBUG_PRINTLN(F(")"));
-        }
+        if (DEBUG_MODE)
+          DEBUG_PRINTF("  + Added regular app: %s (%d/%d)", regularApps[i].first.c_str(), i+1, regularApps.size());
 
         // Making sure to add the priority apps after each normal one
         // And aborting at the end to not duplicate priority apps when the idx wraps around
@@ -286,10 +251,8 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
           for (const auto &priorityApp : priorityApps)
           {
             newAppOrder.push_back(priorityApp);
-            if (DEBUG_MODE) {
-              DEBUG_PRINT(F("    + Added priority app: "));
-              DEBUG_PRINTLN(priorityApp.first);
-            }
+            if (DEBUG_MODE)
+              DEBUG_PRINTF("    + Added priority app: %s", priorityApp.first.c_str());
           }
         }
         else if (DEBUG_MODE) {
@@ -302,22 +265,15 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
       if (DEBUG_MODE) {
         DEBUG_PRINTLN(F("Reordering complete. New app order:"));
         for (size_t i = 0; i < originalApps.size(); i++) {
-          DEBUG_PRINT(F("  ["));
-          DEBUG_PRINT(String(i));
-          DEBUG_PRINT(F("] "));
-          DEBUG_PRINTLN(originalApps[i].first);
+          DEBUG_PRINTF("  [%d] %s", i, originalApps[i].first.c_str());
         }
-        DEBUG_PRINT(F("Total apps in new order: "));
-        DEBUG_PRINTLN(String(originalApps.size()));
+        DEBUG_PRINTF("Total apps in new order: %d", originalApps.size());
       }
 
       if (!currentAppName.isEmpty())
       {
-        if (DEBUG_MODE) {
-          DEBUG_PRINT(F("Need to preserve current app position for: '"));
-          DEBUG_PRINT(currentAppName);
-          DEBUG_PRINTLN(F("'"));
-        }
+        if (DEBUG_MODE)
+          DEBUG_PRINTF("Need to preserve current app position for: '%s'", currentAppName.c_str());
           
         // If required, update current app index to continue pointing at the app the user is currently seeing
         if (this->state.currentApp >= originalApps.size() || 
@@ -326,13 +282,9 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
           if (DEBUG_MODE) {
             if (this->state.currentApp >= originalApps.size())
               DEBUG_PRINTLN(F("Current index out of bounds after reordering"));
-            else {
-              DEBUG_PRINT(F("App at current index changed from '"));
-              DEBUG_PRINT(currentAppName);
-              DEBUG_PRINT(F("' to '"));
-              DEBUG_PRINT(originalApps[this->state.currentApp].first);
-              DEBUG_PRINTLN(F("'"));
-            }
+            else
+              DEBUG_PRINTF("App at current index changed from '%s' to '%s'", 
+                         currentAppName.c_str(), originalApps[this->state.currentApp].first.c_str());
           }
           
           bool found = false;
@@ -341,30 +293,19 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
             if (originalApps[i].first == currentAppName)
             {
               this->state.currentApp = i;
-              if (DEBUG_MODE) {
-                DEBUG_PRINT(F("Updated current app index to: "));
-                DEBUG_PRINT(String(i));
-                DEBUG_PRINT(F(" for app: '"));
-                DEBUG_PRINT(currentAppName);
-                DEBUG_PRINTLN(F("'"));
-              }
+              if (DEBUG_MODE)
+                DEBUG_PRINTF("Updated current app index to: %d for app: '%s'", i, currentAppName.c_str());
               found = true;
               break;
             }
           }
           
-          if (DEBUG_MODE && !found) {
-            DEBUG_PRINT(F("Warning: Could not find current app '"));
-            DEBUG_PRINT(currentAppName);
-            DEBUG_PRINTLN(F("' in reordered app list!"));
-          }
+          if (DEBUG_MODE && !found)
+            DEBUG_PRINTF("Warning: Could not find current app '%s' in reordered app list!", currentAppName.c_str());
         }
         else if (DEBUG_MODE) {
-          DEBUG_PRINT(F("Current app index still valid after reordering: "));
-          DEBUG_PRINT(String(this->state.currentApp));
-          DEBUG_PRINT(F(" -> '"));
-          DEBUG_PRINT(originalApps[this->state.currentApp].first);
-          DEBUG_PRINTLN(F("'"));
+          DEBUG_PRINTF("Current app index still valid after reordering: %d -> '%s'", 
+                     this->state.currentApp, originalApps[this->state.currentApp].first.c_str());
         }
       }
     }
@@ -384,35 +325,21 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
   AppCount = originalApps.size();
   AppFunctions = new AppCallback[AppCount];
   
-  if (DEBUG_MODE) {
-    DEBUG_PRINT(F("Allocated new AppFunctions array for "));
-    DEBUG_PRINT(String(AppCount));
-    DEBUG_PRINTLN(F(" apps"));
-  }
+  if (DEBUG_MODE)
+    DEBUG_PRINTF("Allocated new AppFunctions array for %d apps", AppCount);
     
   for (size_t i = 0; i < AppCount; ++i)
   {
     AppFunctions[i] = originalApps[i].second;
-    if (DEBUG_MODE && i < 5) {  // Only log first few to avoid flooding
-      DEBUG_PRINT(F("  Set AppFunction["));
-      DEBUG_PRINT(String(i));
-      DEBUG_PRINT(F("] = "));
-      DEBUG_PRINTLN(originalApps[i].first);
-    }
+    if (DEBUG_MODE && i < 5)  // Only log first few to avoid flooding
+      DEBUG_PRINTF("  Set AppFunction[%d] = %s", i, originalApps[i].first.c_str());
   }
   
-  if (DEBUG_MODE && AppCount > 5) {
-    DEBUG_PRINT(F("  ...and "));
-    DEBUG_PRINT(String(AppCount - 5));
-    DEBUG_PRINTLN(F(" more"));
-  }
+  if (DEBUG_MODE && AppCount > 5)
+    DEBUG_PRINTF("  ...and %d more", AppCount - 5);
   
-  if (DEBUG_MODE) {
-    DEBUG_PRINT(F("Final app count: "));
-    DEBUG_PRINT(String(AppCount));
-    DEBUG_PRINT(F(", current app index: "));
-    DEBUG_PRINTLN(String(this->state.currentApp));
-  }
+  if (DEBUG_MODE)
+    DEBUG_PRINTF("Final app count: %d, current app index: %d", AppCount, this->state.currentApp);
     
   this->resetState();
   if (DEBUG_MODE)
