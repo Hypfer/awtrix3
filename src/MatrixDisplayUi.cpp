@@ -101,12 +101,36 @@ void MatrixDisplayUi::setAppAnimation(AnimationDirection dir)
 
 void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> &appPairs)
 {
+  if (DEBUG_MODE) {
+    DEBUG_PRINTLN(F("===== MatrixDisplayUi::setApps START ====="));
+    DEBUG_PRINTLN(F("Original input apps count: ") + String(appPairs.size()));
+    DEBUG_PRINT(F("Original apps: "));
+    for (const auto &app : appPairs) {
+      DEBUG_PRINT(app.first + F(" "));
+    }
+    DEBUG_PRINTLN("");
+    DEBUG_PRINTLN(F("Current app index before processing: ") + String(this->state.currentApp));
+  }
+  
   delete[] AppFunctions;
+  if (DEBUG_MODE)
+    DEBUG_PRINTLN(F("Deleted old AppFunctions array"));
 
   std::vector<std::pair<String, AppCallback>> originalApps = appPairs;
 
   if (!PRIORITY_APPS.empty())
   {
+    if (DEBUG_MODE) {
+      DEBUG_PRINTLN(F("Priority apps feature enabled"));
+      DEBUG_PRINTLN(F("Priority apps count: ") + String(PRIORITY_APPS.size()));
+      DEBUG_PRINT(F("Priority apps list: "));
+      for (size_t i = 0; i < PRIORITY_APPS.size(); i++) {
+        DEBUG_PRINT(PRIORITY_APPS[i]);
+        if (i < PRIORITY_APPS.size() - 1) DEBUG_PRINT(F(", "));
+      }
+      DEBUG_PRINTLN("");
+    }
+    
     /*
      * Priority apps appear after every regular app and preserve their defined order.
      *
@@ -128,17 +152,26 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
     std::vector<std::pair<String, AppCallback>> priorityApps;
     std::vector<std::pair<String, AppCallback>> regularApps;
 
+    if (DEBUG_MODE)
+      DEBUG_PRINTLN(F("Starting to identify and separate priority and regular apps"));
+
     // Find all priority apps in the order they appear in PRIORITY_APPS
     for (const String &priorityAppName : PRIORITY_APPS)
     {
+      bool found = false;
       for (const auto &app : originalApps)
       {
         if (app.first == priorityAppName)
         {
           priorityApps.push_back(app);
+          if (DEBUG_MODE)
+            DEBUG_PRINTLN(F("Found priority app: ") + app.first + F(" (matching name in PRIORITY_APPS)"));
+          found = true;
           break;
         }
       }
+      if (DEBUG_MODE && !found)
+        DEBUG_PRINTLN(F("Warning: Priority app '") + priorityAppName + F("' specified but not found in available apps"));
     }
 
     // All non-priority apps go to regularApps
@@ -147,79 +180,188 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
       if (std::find(PRIORITY_APPS.begin(), PRIORITY_APPS.end(), app.first) == PRIORITY_APPS.end())
       {
         regularApps.push_back(app);
+        if (DEBUG_MODE)
+          DEBUG_PRINTLN(F("Identified regular app: ") + app.first);
       }
+    }
+    
+    if (DEBUG_MODE) {
+      DEBUG_PRINTLN(F("After separation:"));
+      DEBUG_PRINTLN(F("Priority apps found: ") + String(priorityApps.size()));
+      DEBUG_PRINTLN(F("Regular apps found: ") + String(regularApps.size()));
     }
     
     // Remember the current app before reordering
     String currentAppName = "";
     if (AppCount > 0 && this->state.currentApp < AppCount)
     {
+      if (DEBUG_MODE)
+        DEBUG_PRINTLN(F("Looking for current app name based on index: ") + String(this->state.currentApp));
+        
       for (size_t i = 0; i < appPairs.size(); ++i)
       {
         if (appPairs[i].second == AppFunctions[this->state.currentApp])
         {
           currentAppName = appPairs[i].first;
+          if (DEBUG_MODE)
+            DEBUG_PRINTLN(F("Current app identified: '") + currentAppName + F("' at index ") + String(this->state.currentApp));
           break;
         }
       }
+      
+      if (DEBUG_MODE && currentAppName.isEmpty())
+        DEBUG_PRINTLN(F("Warning: Could not identify current app name"));
+    }
+    else if (DEBUG_MODE) {
+      DEBUG_PRINTLN(F("No current app to identify (AppCount=") + String(AppCount) + 
+                   F(", currentApp=") + String(this->state.currentApp) + F(")"));
     }
 
     if (!priorityApps.empty() && !regularApps.empty())
     {
+      if (DEBUG_MODE)
+        DEBUG_PRINTLN(F("Both priority and regular apps exist - starting reordering process"));
+      
       std::vector<std::pair<String, AppCallback>> newAppOrder;
 
       // We start with priority apps
+      if (DEBUG_MODE)
+        DEBUG_PRINTLN(F("Step 1: Adding initial priority apps block"));
+        
       for (const auto &priorityApp : priorityApps)
       {
         newAppOrder.push_back(priorityApp);
+        if (DEBUG_MODE)
+          DEBUG_PRINTLN(F("  + Added initial priority app: ") + priorityApp.first);
       }
 
       // Then add regular apps one by one
+      if (DEBUG_MODE)
+        DEBUG_PRINTLN(F("Step 2: Adding regular apps with priority apps after each (except last)"));
+        
       for (size_t i = 0; i < regularApps.size(); i++)
       {
         newAppOrder.push_back(regularApps[i]);
+        if (DEBUG_MODE)
+          DEBUG_PRINTLN(F("  + Added regular app: ") + regularApps[i].first + 
+                       F(" (") + String(i+1) + F("/") + String(regularApps.size()) + F(")"));
 
         // Making sure to add the priority apps after each normal one
         // And aborting at the end to not duplicate priority apps when the idx wraps around
         if (i < regularApps.size() - 1)
         {
+          if (DEBUG_MODE)
+            DEBUG_PRINTLN(F("    Adding priority apps block after regular app"));
+            
           for (const auto &priorityApp : priorityApps)
           {
             newAppOrder.push_back(priorityApp);
+            if (DEBUG_MODE)
+              DEBUG_PRINTLN(F("    + Added priority app: ") + priorityApp.first);
           }
+        }
+        else if (DEBUG_MODE) {
+          DEBUG_PRINTLN(F("    Skipping priority apps block after last regular app"));
         }
       }
 
       originalApps = newAppOrder;
+      
+      if (DEBUG_MODE) {
+        DEBUG_PRINTLN(F("Reordering complete. New app order:"));
+        for (size_t i = 0; i < originalApps.size(); i++) {
+          DEBUG_PRINTLN(F("  [") + String(i) + F("] ") + originalApps[i].first);
+        }
+        DEBUG_PRINTLN(F("Total apps in new order: ") + String(originalApps.size()));
+      }
 
       if (!currentAppName.isEmpty())
       {
+        if (DEBUG_MODE)
+          DEBUG_PRINTLN(F("Need to preserve current app position for: '") + currentAppName + F("'"));
+          
         // If required, update current app index to continue pointing at the app the user is currently seeing
         if (this->state.currentApp >= originalApps.size() || 
             originalApps[this->state.currentApp].first != currentAppName)
         {
+          if (DEBUG_MODE) {
+            if (this->state.currentApp >= originalApps.size())
+              DEBUG_PRINTLN(F("Current index out of bounds after reordering"));
+            else
+              DEBUG_PRINTLN(F("App at current index changed from '") + currentAppName + 
+                           F("' to '") + originalApps[this->state.currentApp].first + F("'"));
+          }
+          
+          bool found = false;
           for (size_t i = 0; i < originalApps.size(); ++i)
           {
             if (originalApps[i].first == currentAppName)
             {
               this->state.currentApp = i;
+              if (DEBUG_MODE)
+                DEBUG_PRINTLN(F("Updated current app index to: ") + String(i) + 
+                             F(" for app: '") + currentAppName + F("'"));
+              found = true;
               break;
             }
           }
+          
+          if (DEBUG_MODE && !found)
+            DEBUG_PRINTLN(F("Warning: Could not find current app '") + currentAppName + 
+                         F("' in reordered app list!"));
+        }
+        else if (DEBUG_MODE) {
+          DEBUG_PRINTLN(F("Current app index still valid after reordering: ") + 
+                       String(this->state.currentApp) + F(" -> '") + originalApps[this->state.currentApp].first + F("'"));
         }
       }
     }
+    else if (DEBUG_MODE) {
+      if (priorityApps.empty() && !regularApps.empty())
+        DEBUG_PRINTLN(F("No priority apps found in the app list - keeping original order"));
+      else if (!priorityApps.empty() && regularApps.empty())
+        DEBUG_PRINTLN(F("Only priority apps found, no regular apps - keeping original order"));
+      else
+        DEBUG_PRINTLN(F("No apps found at all - this is unexpected"));
+    }
+  }
+  else if (DEBUG_MODE) {
+    DEBUG_PRINTLN(F("PRIORITY_APPS list is empty - skipping priority apps processing"));
   }
 
   AppCount = originalApps.size();
   AppFunctions = new AppCallback[AppCount];
+  
+  if (DEBUG_MODE)
+    DEBUG_PRINTLN(F("Allocated new AppFunctions array for ") + String(AppCount) + F(" apps"));
+    
   for (size_t i = 0; i < AppCount; ++i)
   {
     AppFunctions[i] = originalApps[i].second;
+    if (DEBUG_MODE && i < 5)  // Only log first few to avoid flooding
+      DEBUG_PRINTLN(F("  Set AppFunction[") + String(i) + F("] = ") + originalApps[i].first);
   }
+  
+  if (DEBUG_MODE && AppCount > 5)
+    DEBUG_PRINTLN(F("  ...and ") + String(AppCount - 5) + F(" more"));
+  
+  if (DEBUG_MODE)
+    DEBUG_PRINTLN(F("Final app count: ") + String(AppCount) + F(", current app index: ") + String(this->state.currentApp));
+    
   this->resetState();
+  if (DEBUG_MODE)
+    DEBUG_PRINTLN(F("Display state reset completed"));
+    
   DisplayManager.sendAppLoop();
+  if (DEBUG_MODE)
+    DEBUG_PRINTLN(F("Sent app loop notification to DisplayManager"));
+    
   DisplayManager.setAutoTransition(true);
+  if (DEBUG_MODE)
+    DEBUG_PRINTLN(F("Auto-transition enabled"));
+    
+  if (DEBUG_MODE)
+    DEBUG_PRINTLN(F("===== MatrixDisplayUi::setApps END ====="));
 }
 
 // -/----- Overlays ------\-
