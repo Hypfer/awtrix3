@@ -355,13 +355,9 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
   for (size_t i = 0; i < AppCount; ++i)
   {
     AppFunctions[i] = originalApps[i].second;
-    if (DEBUG_MODE && i < 5) {  // Only log first few to avoid flooding
+    if (DEBUG_MODE) { 
       DEBUG_PRINTF("  Set AppFunction[%d] = %s", i, originalApps[i].first.c_str());
     }
-  }
-  
-  if (DEBUG_MODE && AppCount > 5) {
-    DEBUG_PRINTF("  ...and %d more", AppCount - 5);
   }
   
   if (DEBUG_MODE) {
