@@ -111,6 +111,23 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
     DEBUG_PRINTF("Current app index before processing: %d", this->state.currentApp);
   }
   
+  // Remember the current app function before deletion
+  AppCallback currentAppFunction = nullptr;
+  if (AppCount > 0 && this->state.currentApp < AppCount && AppFunctions != nullptr) {
+    currentAppFunction = AppFunctions[this->state.currentApp];
+    if (DEBUG_MODE) {
+      DEBUG_PRINTF("Saved current app function at index: %d", this->state.currentApp);
+      
+      // For debug, try to find the app name
+      for (const auto &app : appPairs) {
+        if (app.second == currentAppFunction) {
+          DEBUG_PRINTF("Current app is: '%s'", app.first.c_str());
+          break;
+        }
+      }
+    }
+  }
+  
   delete[] AppFunctions;
   if (DEBUG_MODE) {
     DEBUG_PRINTLN(F("Deleted old AppFunctions array"));
@@ -192,39 +209,6 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
       DEBUG_PRINTF("Priority apps found: %d", priorityApps.size());
       DEBUG_PRINTF("Regular apps found: %d", regularApps.size());
     }
-    
-    // Remember the current app before reordering
-    String currentAppName = "";
-    if (AppCount > 0 && this->state.currentApp < AppCount && AppFunctions != nullptr)
-    {
-      if (DEBUG_MODE) {
-        DEBUG_PRINTF("Looking for current app name based on index: %d (AppCount: %d)", this->state.currentApp, AppCount);
-      }
-      
-      // First get the function pointer for the current app
-      AppCallback currentAppFunction = AppFunctions[this->state.currentApp];
-      
-      // Then find which app in the original list matches this function pointer
-      for (const auto &app : originalApps)
-      {
-        if (app.second == currentAppFunction)
-        {
-          currentAppName = app.first;
-          if (DEBUG_MODE) {
-            DEBUG_PRINTF("Current app identified: '%s' at index %d", currentAppName.c_str(), this->state.currentApp);
-          }
-          break;
-        }
-      }
-      
-      if (DEBUG_MODE && currentAppName.isEmpty()) {
-        DEBUG_PRINTLN(F("Warning: Could not identify current app name - app may have been removed"));
-      }
-    }
-    else if (DEBUG_MODE) {
-      DEBUG_PRINTF("No current app to identify (AppCount=%d, currentApp=%d, AppFunctions=%s)", 
-                  AppCount, this->state.currentApp, (AppFunctions != nullptr ? "valid" : "nullptr"));
-    }
 
     if (!priorityApps.empty() && !regularApps.empty())
     {
@@ -289,50 +273,6 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
         }
         DEBUG_PRINTF("Total apps in new order: %d", originalApps.size());
       }
-
-      if (!currentAppName.isEmpty())
-      {
-        if (DEBUG_MODE) {
-          DEBUG_PRINTF("Need to preserve current app position for: '%s'", currentAppName.c_str());
-        }
-          
-        // If required, update current app index to continue pointing at the app the user is currently seeing
-        if (this->state.currentApp >= originalApps.size() || 
-            originalApps[this->state.currentApp].first != currentAppName)
-        {
-          if (DEBUG_MODE) {
-            if (this->state.currentApp >= originalApps.size()) {
-              DEBUG_PRINTLN(F("Current index out of bounds after reordering"));
-            }
-            else {
-              DEBUG_PRINTF("App at current index changed from '%s' to '%s'", 
-                         currentAppName.c_str(), originalApps[this->state.currentApp].first.c_str());
-            }
-          }
-          
-          bool found = false;
-          for (size_t i = 0; i < originalApps.size(); ++i)
-          {
-            if (originalApps[i].first == currentAppName)
-            {
-              this->state.currentApp = i;
-              if (DEBUG_MODE) {
-                DEBUG_PRINTF("Updated current app index to: %d for app: '%s'", i, currentAppName.c_str());
-              }
-              found = true;
-              break;
-            }
-          }
-          
-          if (DEBUG_MODE && !found) {
-            DEBUG_PRINTF("Warning: Could not find current app '%s' in reordered app list!", currentAppName.c_str());
-          }
-        }
-        else if (DEBUG_MODE) {
-          DEBUG_PRINTF("Current app index still valid after reordering: %d -> '%s'", 
-                     this->state.currentApp, originalApps[this->state.currentApp].first.c_str());
-        }
-      }
     }
     else if (DEBUG_MODE) {
       if (priorityApps.empty() && !regularApps.empty()) {
@@ -350,6 +290,7 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
     DEBUG_PRINTLN(F("PRIORITY_APPS list is empty - skipping priority apps processing"));
   }
 
+  // Create the new AppFunctions array
   AppCount = originalApps.size();
   AppFunctions = new AppCallback[AppCount];
   
@@ -357,11 +298,53 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
     DEBUG_PRINTF("Allocated new AppFunctions array for %d apps", AppCount);
   }
     
-  for (size_t i = 0; i < AppCount; ++i)
-  {
+  for (size_t i = 0; i < AppCount; ++i) {
     AppFunctions[i] = originalApps[i].second;
     if (DEBUG_MODE) {
       DEBUG_PRINTF("  Set AppFunction[%d] = %s", i, originalApps[i].first.c_str());
+    }
+  }
+  
+  // Find the position of the current function in the new order
+  if (currentAppFunction != nullptr && AppCount > 0) {
+    if (DEBUG_MODE) {
+      DEBUG_PRINTLN(F("Looking for current app function in new order"));
+    }
+    
+    // Check if current index is still valid
+    if (this->state.currentApp >= AppCount || 
+        AppFunctions[this->state.currentApp] != currentAppFunction) {
+      // Need to find the app in the new order
+      bool found = false;
+      for (size_t i = 0; i < AppCount; ++i) {
+        if (AppFunctions[i] == currentAppFunction) {
+          if (DEBUG_MODE) {
+            DEBUG_PRINTF("Found current app at new index: %d (was: %d)", i, this->state.currentApp);
+          }
+          this->state.currentApp = i;
+          found = true;
+          break;
+        }
+      }
+      
+      if (!found) {
+        if (DEBUG_MODE) {
+          DEBUG_PRINTLN(F("Warning: Current app function not found in new app list - resetting to first app"));
+        }
+        this->state.currentApp = 0;
+      }
+    } else if (DEBUG_MODE) {
+      DEBUG_PRINTF("Current app index still valid: %d", this->state.currentApp);
+    }
+  } else {
+    // No current app or empty app list
+    this->state.currentApp = 0;
+    if (DEBUG_MODE) {
+      if (AppCount == 0) {
+        DEBUG_PRINTLN(F("No apps in list - setting index to 0"));
+      } else {
+        DEBUG_PRINTLN(F("No current app function - setting index to 0"));
+      }
     }
   }
   
