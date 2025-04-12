@@ -195,17 +195,21 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
     
     // Remember the current app before reordering
     String currentAppName = "";
-    if (AppCount > 0 && this->state.currentApp < AppCount)
+    if (AppCount > 0 && this->state.currentApp < AppCount && AppFunctions != nullptr)
     {
       if (DEBUG_MODE) {
-        DEBUG_PRINTF("Looking for current app name based on index: %d", this->state.currentApp);
+        DEBUG_PRINTF("Looking for current app name based on index: %d (AppCount: %d)", this->state.currentApp, AppCount);
       }
-        
-      for (size_t i = 0; i < appPairs.size(); ++i)
+      
+      // First get the function pointer for the current app
+      AppCallback currentAppFunction = AppFunctions[this->state.currentApp];
+      
+      // Then find which app in the original list matches this function pointer
+      for (const auto &app : originalApps)
       {
-        if (appPairs[i].second == AppFunctions[this->state.currentApp])
+        if (app.second == currentAppFunction)
         {
-          currentAppName = appPairs[i].first;
+          currentAppName = app.first;
           if (DEBUG_MODE) {
             DEBUG_PRINTF("Current app identified: '%s' at index %d", currentAppName.c_str(), this->state.currentApp);
           }
@@ -214,11 +218,12 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
       }
       
       if (DEBUG_MODE && currentAppName.isEmpty()) {
-        DEBUG_PRINTLN(F("Warning: Could not identify current app name"));
+        DEBUG_PRINTLN(F("Warning: Could not identify current app name - app may have been removed"));
       }
     }
     else if (DEBUG_MODE) {
-      DEBUG_PRINTF("No current app to identify (AppCount=%d, currentApp=%d)", AppCount, this->state.currentApp);
+      DEBUG_PRINTF("No current app to identify (AppCount=%d, currentApp=%d, AppFunctions=%s)", 
+                  AppCount, this->state.currentApp, (AppFunctions != nullptr ? "valid" : "nullptr"));
     }
 
     if (!priorityApps.empty() && !regularApps.empty())
@@ -355,7 +360,7 @@ void MatrixDisplayUi::setApps(const std::vector<std::pair<String, AppCallback>> 
   for (size_t i = 0; i < AppCount; ++i)
   {
     AppFunctions[i] = originalApps[i].second;
-    if (DEBUG_MODE) { 
+    if (DEBUG_MODE) {
       DEBUG_PRINTF("  Set AppFunction[%d] = %s", i, originalApps[i].first.c_str());
     }
   }
