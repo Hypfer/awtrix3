@@ -19,14 +19,14 @@ HAMqtt mqtt(espClient, device, 26);
 HALight *Matrix, *Indikator1, *Indikator2, *Indikator3 = nullptr;
 HASelect *BriMode, *transEffect = nullptr;
 HAButton *dismiss, *nextApp, *prevApp, *doUpdate = nullptr;
-HASwitch *transition = nullptr;
+HASwitch *transition, *nightMode = nullptr;
 #ifndef awtrix2_upgrade
 HASensor *battery = nullptr;
 #endif
 HASensor *temperature, *humidity, *illuminance, *uptime, *strength, *version, *ram, *curApp, *myOwnID, *ipAddr = nullptr;
 HABinarySensor *btnleft, *btnmid, *btnright = nullptr;
 bool connected;
-char matID[40], ind1ID[40], ind2ID[40], ind3ID[40], briID[40], btnAID[40], btnBID[40], btnCID[40], appID[40], tempID[40], humID[40], luxID[40], verID[40], ramID[40], upID[40], sigID[40], btnLID[40], btnMID[40], btnRID[40], transID[40], doUpdateID[40], batID[40], myID[40], sSpeed[40], effectID[40], ipAddrID[40];
+char matID[40], ind1ID[40], ind2ID[40], ind3ID[40], briID[40], btnAID[40], btnBID[40], btnCID[40], appID[40], tempID[40], humID[40], luxID[40], verID[40], ramID[40], upID[40], sigID[40], btnLID[40], btnMID[40], btnRID[40], transID[40], doUpdateID[40], batID[40], myID[40], sSpeed[40], effectID[40], ipAddrID[40], nightModeID[40];
 long previousMillis_Stats;
 std::map<String, String> mqttValues;
 std::vector<String> topicsToSubscribe;
@@ -345,6 +345,11 @@ void onNumberCommand(HANumeric number, HANumber *sender)
     sender->setState(number); // report the selected option back to the HA panel
 }
 
+void onNightModeCommand(bool state, HASwitch *sender) {
+    DisplayManager.setNightMode(state);
+    sender->setState(state); // report state back to the Home Assistant
+}
+
 void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
 {
     if (DEBUG_MODE)
@@ -636,6 +641,12 @@ void MQTTManager_::setup()
         transition->setName(HAtransName);
         transition->onCommand(onSwitchCommand);
 
+        sprintf(nightModeID, HAnightModeID, macStr);
+        nightMode = new HASwitch(nightModeID);
+        nightMode->setIcon(HAnightModeIcon);
+        nightMode->setName(HAnightModeName);
+        nightMode->onCommand(onNightModeCommand);
+
         sprintf(appID, HAappID, macStr);
         curApp = new HASensor(appID);
         curApp->setIcon(HAappIcon);
@@ -729,6 +740,7 @@ void MQTTManager_::setup()
         ipAddr = new HASensor(ipAddrID);
         ipAddr->setName(HAipAddrName);
         ipAddr->setIcon(HAipAddrIcon);
+
     }
     else
     {
@@ -829,6 +841,12 @@ void MQTTManager_::sendButton(byte btn, bool state)
         break;
     default:
         break;
+    }
+}
+
+void MQTTManager_::updateNightModeState(bool state) {
+    if (HA_DISCOVERY && mqtt.isConnected() && nightMode != nullptr) {
+        nightMode->setState(state);
     }
 }
 

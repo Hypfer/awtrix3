@@ -102,6 +102,17 @@ const char *getTimeFormat()
     }
 }
 
+void NightTimeApp(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer) {
+    CURRENT_APP = "NightMode";
+    currentCustomApp = "";
+
+    DisplayManager.setTextColor(0xFF0000);
+
+    char t[20];
+    strftime(t, sizeof(t), getTimeFormat(), timer_localtime());
+    DisplayManager.printText(12 + x, 6 + y, t, true, 2);
+}
+
 void TimeApp(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer)
 {
     if (notifyFlag)

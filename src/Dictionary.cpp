@@ -134,6 +134,10 @@ const char HAramName[] PROGMEM = {"Free ram"};
 const char HAramClass[] PROGMEM = {"data_size"};
 const char HAramUnit[] PROGMEM = {"B"};
 
+const char HAnightModeID[] PROGMEM = {"%s_night"};
+const char HAnightModeName[] PROGMEM = {"Night Mode"};
+const char HAnightModeIcon[] PROGMEM = {"mdi:weather-night"};
+
 
 // JSON properties
 

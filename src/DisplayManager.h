@@ -100,6 +100,8 @@ public:
     void setTextColor(uint32_t color);
     void matrixPrint(double number, uint8_t digits);
     void setCustomAppColors(uint32_t color);
+    void setNightMode(bool enabled);
+    bool isNightMode() const;
 };
 
 extern DisplayManager_ &DisplayManager;

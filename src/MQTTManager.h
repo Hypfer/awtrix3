@@ -20,6 +20,7 @@ public:
     void sendStats();
     void sendButton(byte, bool);
     void setIndicatorState(uint8_t indicator, bool state, uint32_t color);
+    void updateNightModeState(bool state);
     void beginPublish(const char *topic, unsigned int plength, boolean retained);
     void writePayload(const char *data, const uint16_t length);
     void endPublish();

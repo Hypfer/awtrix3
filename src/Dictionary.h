@@ -131,6 +131,10 @@ extern const char HAramName[];
 extern const char HAramClass[];
 extern const char HAramUnit[];
 
+extern const char HAnightModeID[];
+extern const char HAnightModeName[];
+extern const char HAnightModeIcon[];
+
 
 // JSON properties
 

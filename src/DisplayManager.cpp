@@ -1213,6 +1213,17 @@ bool universe2_complete = false;
 
 void DisplayManager_::tick()
 {
+  if (NIGHT_MODE) {
+      // In night mode, we just manually call the night app
+      matrix->clear();
+      matrix->setBrightness(1); // Lower brightness for night
+      NightTimeApp(matrix, ui->getUiState(), 0, 0, nullptr);
+      gammaCorrection();
+      matrix->show();
+      memcpy(ledsCopy, leds, sizeof(leds));
+      return;
+    }
+
   if (GAME_ACTIVE)
   {
     GameManager.tick();
@@ -2834,4 +2845,16 @@ void DisplayManager_::setCursor(int16_t x, int16_t y)
 void DisplayManager_::setTextColor(uint32_t color)
 {
   textColor = color;
+}
+
+void DisplayManager_::setNightMode(bool enabled) {
+    if (enabled == NIGHT_MODE) return;
+
+    NIGHT_MODE = enabled;
+
+    MQTTManager.updateNightModeState(enabled);
+}
+
+bool DisplayManager_::isNightMode() const {
+    return NIGHT_MODE;
 }
