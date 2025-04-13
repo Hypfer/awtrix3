@@ -67,17 +67,8 @@ jobs:
       - name: Run PlatformIO for ulanzi
         run: pio run --environment ulanzi
 
-      - name: Run PlatformIO for awtrix2_upgrade
-        run: pio run --environment awtrix2_upgrade
-
       - name: Upload ulanzi firmware as artifact
         uses: actions/upload-artifact@v4
         with:
           name: ulanzi_firmware_${{ steps.original_version.outputs.firmware_version }}_${{ steps.commit_hash.outputs.short_hash }}
           path: .pio/build/ulanzi/firmware.bin
-
-      - name: Upload awtrix2_upgrade firmware as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: awtrix2_upgrade_firmware_${{ steps.original_version.outputs.firmware_version }}_${{ steps.commit_hash.outputs.short_hash }}
-          path: .pio/build/awtrix2_upgrade/firmware.bin
