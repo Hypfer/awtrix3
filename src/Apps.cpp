@@ -106,7 +106,7 @@ void NightTimeApp(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_
     CURRENT_APP = "NightMode";
     currentCustomApp = "";
 
-    DisplayManager.setTextColor(0xFF0000);
+    DisplayManager.setTextColor(0x800000);
 
     char t[20];
     strftime(t, sizeof(t), getTimeFormat(), timer_localtime());

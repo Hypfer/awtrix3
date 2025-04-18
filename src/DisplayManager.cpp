@@ -1218,7 +1218,6 @@ void DisplayManager_::tick()
       matrix->clear();
       matrix->setBrightness(1); // Lower brightness for night
       NightTimeApp(matrix, ui->getUiState(), 0, 0, nullptr);
-      gammaCorrection();
       matrix->show();
       memcpy(ledsCopy, leds, sizeof(leds));
       return;
