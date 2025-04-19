@@ -204,6 +204,10 @@ void select_button_pressed_long()
         saveSettings();
         ESP.restart();
     }
+    else if (NIGHT_MODE)
+    {
+      DisplayManager.setNightMode(false);
+    }
     else if (!BLOCK_NAVIGATION)
     {
         MenuManager.selectButtonLong();

@@ -1216,7 +1216,7 @@ void DisplayManager_::tick()
   if (NIGHT_MODE) {
       // In night mode, we just manually call the night app
       matrix->clear();
-      matrix->setBrightness(1); // Lower brightness for night
+      matrix->setBrightness(!MATRIX_OFF ? 1 : 0);
       NightTimeApp(matrix, ui->getUiState(), 0, 0, nullptr);
       matrix->show();
       memcpy(ledsCopy, leds, sizeof(leds));
