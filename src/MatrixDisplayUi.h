@@ -55,7 +55,8 @@ enum TransitionType
   RIPPLE,
   BLINK,
   RELOAD,
-  CROSSFADE
+  CROSSFADE,
+  SIMPLE
 };
 
 enum AppState
@@ -132,6 +133,7 @@ private:
   void blinkTransition();
   void reloadTransition();
   void crossfadeTransition();
+  void simpleTransition();
 
 public:
   MatrixDisplayUi(FastLED_NeoMatrix *matrix);
