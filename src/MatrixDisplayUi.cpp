@@ -513,6 +513,10 @@ void MatrixDisplayUi::drawApp()
     {
       crossfadeTransition();
     }
+    else if (currentTransition == INSTANT)
+    {
+        instantTransition();
+    }
     break;
   }
   case FIXED:
@@ -1039,4 +1043,10 @@ void MatrixDisplayUi::crossfadeTransition()
       DisplayManager.getLeds()[this->matrix->XY(i, j)] = pixelOld.lerp8(pixelNew, progress * 255);
     }
   }
+}
+
+void MatrixDisplayUi::instantTransition()
+{
+    this->matrix->clear();
+    (this->AppFunctions[this->getnextAppNumber()])(this->matrix, &this->state, 0, 0, &gif2);
 }
